@@ -104,7 +104,7 @@ parser.add_argument(
 
 idx = 0
 args = parser.parse_args()
-print(args)
+
 
 if not args.userlist and not args.user:
     print(Fore.RED + '[ERROR] -u or -U required!')
@@ -119,7 +119,6 @@ VERBOSE = args.verbose
 TARGETS = [i for i in open(args.targetlist,'rt').read().split('\n')]
 
 USERS = [User(el.split(':')[0],el.split(':')[1]) for el in USERLIST]
-print([(el.mail_address,el.password) for el in USERS])
 mail_content = open(args.content).read()
 mail_header = open(args.header).read()
 
