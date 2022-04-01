@@ -151,11 +151,6 @@ def send_mail(user,password,target,header,content):
         #The body and the attachments for the mail
         message.attach(MIMEText(content, 'plain'))
         if args.attachment:
-            if ',' in args.attachment:
-                args.attachment = args.attachment.split(',')
-                for f in args.attachment:
-                    if os.path.isdir():
-                        print("Directories aren\'t supported")
             add_attachment(message,args.attachment)
 
         #Create SMTP session for sending the mail
