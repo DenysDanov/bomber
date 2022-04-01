@@ -1,10 +1,8 @@
 from email.mime.application import MIMEApplication
 from posixpath import basename
 from colorama import Fore
-from email.mime.base import MIMEBase
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
-from email import encoders
 from random import randint
 
 import smtplib
@@ -111,8 +109,8 @@ args = parser.parse_args()
 
 if not args.userlist and not args.user:
     print(Fore.RED + '[ERROR] -u or -U required!')
-if args.attachment:
-    print("Attacments will be added later")
+    exit()
+
 
 COUNTER = args.counter
 
@@ -124,7 +122,7 @@ TARGETS = [i for i in open(args.targetlist,'rt').read().split('\n')]
 USERS = [User(el.split(':')[0],el.split(':')[1]) for el in USERLIST]
 mail_content = open(args.content).read()
 mail_header = open(args.header).read()
-print(args)
+
 
 
 def add_attachment():
@@ -139,7 +137,7 @@ def add_attachment():
 
 def send_mail(user,password,target,header,content):
     try:
-        print(Fore.CYAN + f'{USER.mail_address}:')
+        print(Fore.CYAN + f'{USER.mail_address}:', end=' ')
         #Setup the MIME
         message = MIMEMultipart()
         message['From'] = user
