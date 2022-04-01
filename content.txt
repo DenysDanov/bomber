@@ -1,1 +1,0 @@
-Email sent by python script 

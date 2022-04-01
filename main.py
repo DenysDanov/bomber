@@ -5,6 +5,7 @@ from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from random import randint
 
+import os
 import smtplib
 import argparse
 
@@ -125,15 +126,18 @@ mail_header = open(args.header).read()
 
 
 
-def add_attachment():
-    attach_file = open(args.attachment, 'rb')
-    part = MIMEApplication(
-                attach_file.read(),
-                Name=basename(args.attachment)
-            )
-        # After the file is closed
-    part['Content-Disposition'] = 'attachment; filename="%s"' % basename(args.attachment)
-    return part
+def add_attachment(message, filename):
+    try:
+        attach_file = open(filename, 'rb')
+        part = MIMEApplication(
+                    attach_file.read(),
+                    Name=basename(filename)
+                )
+            # After the file is closed
+        part['Content-Disposition'] = 'attachment; filename="%s"' % basename(filename)
+        message.attach(part)
+    except Exception as e:
+        print(Fore.RED + f'[Err] {e} occured')
 
 def send_mail(user,password,target,header,content):
     try:
@@ -146,9 +150,14 @@ def send_mail(user,password,target,header,content):
 
         #The body and the attachments for the mail
         message.attach(MIMEText(content, 'plain'))
-        if args.attachment: 
-            payload = add_attachment()
-            message.attach(payload)
+        if args.attachment:
+            if ',' in args.attachment:
+                args.attachment = args.attachment.split(',')
+                for f in args.attachment:
+                    if os.path.isdir():
+                        print("Directories aren\'t supported")
+            add_attachment(message,args.attachment)
+
         #Create SMTP session for sending the mail
         session = smtplib.SMTP('smtp.gmail.com', 587) #use gmail with port
         session.starttls() #enable security
