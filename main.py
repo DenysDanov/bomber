@@ -1,7 +1,10 @@
+from email.mime.application import MIMEApplication
+from posixpath import basename
 from colorama import Fore
 from email.mime.base import MIMEBase
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
+from email import encoders
 from random import randint
 
 import smtplib
@@ -121,6 +124,18 @@ TARGETS = [i for i in open(args.targetlist,'rt').read().split('\n')]
 USERS = [User(el.split(':')[0],el.split(':')[1]) for el in USERLIST]
 mail_content = open(args.content).read()
 mail_header = open(args.header).read()
+print(args)
+
+
+def add_attachment():
+    attach_file = open(args.attachment, 'rb')
+    part = MIMEApplication(
+                attach_file.read(),
+                Name=basename(args.attachment)
+            )
+        # After the file is closed
+    part['Content-Disposition'] = 'attachment; filename="%s"' % basename(args.attachment)
+    return part
 
 def send_mail(user,password,target,header,content):
     try:
@@ -133,7 +148,9 @@ def send_mail(user,password,target,header,content):
 
         #The body and the attachments for the mail
         message.attach(MIMEText(content, 'plain'))
-
+        if args.attachment: 
+            payload = add_attachment()
+            message.attach(payload)
         #Create SMTP session for sending the mail
         session = smtplib.SMTP('smtp.gmail.com', 587) #use gmail with port
         session.starttls() #enable security
@@ -142,7 +159,7 @@ def send_mail(user,password,target,header,content):
         text = message.as_string()
         session.sendmail(user, target, text)
         session.quit()
-    except Exception as e:
+    except IndexError as e:
         print(Fore.RED + f'Error [{e}] occured')
     else:
         global idx
