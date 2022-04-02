@@ -12,7 +12,7 @@ import argparse
 
 '''
 Example string
-python main.py --header header.txt --content content.txt --targetlist targets.txt -U userlist.txt
+python main.py --header "exapmle header" --content content.txt --targetlist targets.txt -u userlist.txt
 '''
 
 class User:
@@ -26,16 +26,11 @@ parser.add_argument(
     '-u',
     '--user',
     type=str,
+    required=True,
     help='''
     -u email_adress@example.com:password or
-    --user email_adress@example.com:password
+    -u file.txt
     '''
-)
-parser.add_argument(
-    '-U',
-    '--userlist',
-    type=str,
-    help='users.txt'
 )
 parser.add_argument(
     '--targetlist',
@@ -107,23 +102,16 @@ parser.add_argument(
 idx = 0
 args = parser.parse_args()
 
-
-if not args.userlist and not args.user:
-    print(Fore.RED + '[ERROR] -u or -U required!')
-    exit()
-
-
 COUNTER = args.counter
-
 TIMER = args.timer
-USERLIST = [args.user] if args.user else open(args.userlist).read().split('\n') 
+USERLIST = [args.user] if not os.path.isfile(args.user) else open(args.user).read().split('\n') 
 VERBOSE = args.verbose
 TARGETS = [i for i in open(args.targetlist,'rt').read().split('\n')]
-
 USERS = [User(el.split(':')[0],el.split(':')[1]) for el in USERLIST]
-mail_content = open(args.content).read()
-mail_header = open(args.header).read()
 
+
+mail_content = open(args.content).read() if os.path.isfile(args.content) else args.content
+mail_header = open(args.header).read() if os.path.isfile(args.header) else args.header
 
 
 def add_attachment(message, filename):
@@ -137,11 +125,12 @@ def add_attachment(message, filename):
         part['Content-Disposition'] = 'attachment; filename="%s"' % basename(filename)
         message.attach(part)
     except Exception as e:
-        print(Fore.RED + f'[Err] {e} occured')
+        if VERBOSE: print(Fore.RED + f'[Err] {e} occured')
+        pass
 
 def send_mail(user,password,target,header,content):
     try:
-        print(Fore.CYAN + f'{USER.mail_address}:', end=' ')
+        if VERBOSE: print(Fore.CYAN + f'{USER.mail_address}:', end=' ')
         #Setup the MIME
         message = MIMEMultipart()
         message['From'] = user
@@ -161,23 +150,24 @@ def send_mail(user,password,target,header,content):
         text = message.as_string()
         session.sendmail(user, target, text)
         session.quit()
-    except IndexError as e:
-        print(Fore.RED + f'Error [{e}] occured')
+    except Exception as e:
+        if VERBOSE: print(Fore.RED + f'Error [{e}] occured')
+        pass
     else:
         global idx
         idx += 1
-        print(Fore.GREEN + f'{target} — mail sent successfully')
+        if VERBOSE: print(Fore.GREEN + f'{target} — mail sent successfully')
         
-
-
-for target in TARGETS:
-    if args.mode == 'every':
-        for USER in USERS:
+if __name__ == '__main__':
+    for target in TARGETS:
+        if args.mode == 'every':
+            for USER in USERS:
+                send_mail(USER.mail_address,USER.password, target,mail_header,mail_content)
+        elif args.mode == 'random':
+            USER = USERS[randint(0,len(USERS))]
             send_mail(USER.mail_address,USER.password, target,mail_header,mail_content)
-    elif args.mode == 'random':
-        USER = USERS[randint(0,len(USERS))]
-        send_mail(USER.mail_address,USER.password, target,mail_header,mail_content)
-    else:
-        print(Fore.RED + '[ERROR] Unexpected --mode argument')
+        else:
+            if VERBOSE: print(Fore.RED + '[ERROR] Unexpected --mode argument')
+            pass
 
 print(Fore.RESET+ f'{idx} emails sent')
